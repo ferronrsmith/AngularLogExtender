@@ -1,6 +1,6 @@
 {
   "name": "AngularLogExtender",
-  "description": "Angular Log Extender",
+  "description": "Angular Log Extender v 3",
   "author": "A confused individual <ferronrsmith@gmail.com>",
   "engine": "node >= 0.10.0",
   "devDependencies": {
