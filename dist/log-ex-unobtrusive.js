@@ -1,5 +1,5 @@
 /**
- * Log Unobtrusive Extension v0.0.2-sha.f468483
+ * Log Unobtrusive Extension v0.0.2-sha.8c23194
  *
  * Used within AngularJS to enhance functionality within the AngularJS $log service.
  *
@@ -21,9 +21,13 @@ angular.module("log.extension.uo", []).config(['$provide',
         //scroll down to the Configuration section to set the log settings
         $provide.decorator('$log', ["$delegate", "$filter",
             function($delegate, $filter) {
+                /** 
+                 * Encapsulates functionality to extends $log and expose functionality
+                 * needed throughout the AngularJS app
+                 **/
                 var logEnhancerObj = function() {
                     /**
-                     *
+                     * checks if a variable is of @type {boolean}
                      * @param value
                      * @returns {boolean}
                      */
@@ -32,7 +36,8 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     *
+                     * Trims whitespace at the beginning and/or end of a string
+                     * returns an empty string if the value passed is not of type {string}
                      * @param value
                      * @returns {String}
                      */
@@ -43,6 +48,8 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
+                     * This method checks if a variable is of type {string}
+                     * and if the string is not an empty string
                      * @param value
                      * @returns {*|Boolean|boolean}
                      */
@@ -70,7 +77,8 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     *
+                     * This method is responsible for generating the prefix of
+                     * all extended $log messages pushed to the console
                      * @param {string=} className
                      * @returns {string}
                      */
@@ -88,9 +96,13 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     *
-                     * @param enabled
-                     * @param override
+                     * This method checks if the global enabled flag and
+                     * the override flag are set as type {boolean}
+                     * variables. Once both are set it returns the
+                     * value of the override flag to control $log outputs
+                     * returns false as default.
+                     * @param {boolean} enabled
+                     * @param {boolean} override
                      * @returns {boolean}
                      */
                     var activateLogs = function(enabled, override) {
@@ -101,7 +113,12 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     *
+                     * This method handles printing out a message to
+                     * indicate if a $log instance is using an override
+                     * if logging is disabled globally & an override of true is set,
+                     *  then a message will be displayed for the specific $log instance
+                     * if logging is enabled globally & an override of false is set,
+                     *  then a message will be displayed for the specific $log instance
                      * @param _$log
                      * @param useOverride
                      * @param _override
@@ -118,19 +135,24 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     *
+                     * original $log methods exposed after extended $log instance is set
                      * @type {string[]}
                      */
                     var logMethods = ['log', 'info', 'warn', 'debug', 'error'];
 
                     /**
-                     *
+                     * publicly allowed methods for the extended $log object.
+                     * this give the developer the option of using special features
+                     * such as setting a className and overriding log messages.
+                     * More Options to come.
                      * @type {string[]}
                      */
                     var allowedMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
 
                     /**
-                     *
+                     * This generic method builds $log objects for different uses around the module
+                     * and AngularJS app. It gives the capability to specify which methods to expose
+                     * when using the $log object in different sections of the app.
                      * @param {Object} oSrc
                      * @param {Array=} aMethods
                      * @param {Function=} func
@@ -151,8 +173,12 @@ angular.module("log.extension.uo", []).config(['$provide',
                         });
                         return resultSet;
                     };
+                    /**
+                     * Runs functionality for transforming the AngularJS $log
+                     * returns extended $log object
+                     * @param $log {Object}
+                     **/
                     var enhanceLogger = function($log) {
-
 
                         /**
                          * Partial application to pre-capture a logger function
@@ -188,7 +214,6 @@ angular.module("log.extension.uo", []).config(['$provide',
 
                         /**
                          * Support to generate class-specific logger instance with/without className or override
-                         *
                          * @param {string=} className Name of object in which $log.<function> calls is invoked.
                          * @param {boolean=} override activates/deactivates component level logging
                          * @returns {*} Logger instance
@@ -208,7 +233,16 @@ angular.module("log.extension.uo", []).config(['$provide',
                             return createLogObj(_$log, logMethods, prepareLogFn, [className, override, useOverride]);
                         };
 
-                        // <need comment>
+
+                        //declarations and functions , extensions
+                        var enabled = false;
+
+                        /** 
+                         * Extends the AngularJS $log object. Transforms native methods and add
+                         * configuration methods
+                         * @param $log
+                         * @param function (with transformation rules)
+                         **/
                         angular.extend($log, createLogObj($log, logMethods, prepareLogFn, [null, false, false]));
 
                         /**
@@ -217,19 +251,17 @@ angular.module("log.extension.uo", []).config(['$provide',
                          */
                         $log.getInstance = getInstance;
 
-                        //declarations and functions , extensions
-                        var enabled = false;
-
                         /**
-                         *
-                         * @param flag
+                         * Accepts a boolean to enable/disable logging globally for
+                         * the AngularJS App
+                         * @param flag {boolean}
                          */
                         $log.enableLog = function(flag) {
                             enabled = flag;
                         };
 
                         /**
-                         * Returns true if debugging is enabled or false when debugging is not enabled
+                         * Returns true if logging is enabled or false when logging is not enabled
                          * @returns {boolean}
                          */
                         $log.logEnabled = function() {
@@ -247,6 +279,7 @@ angular.module("log.extension.uo", []).config(['$provide',
                     var exposeSafeLog = function($log) {
                         return createLogObj($log, allowedMethods);
                     };
+                    // add public methods to logEnhancerObj
                     this.enhanceLogger = enhanceLogger;
                     this.exposeSafeLog = exposeSafeLog;
                 };
