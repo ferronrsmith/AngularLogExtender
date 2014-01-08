@@ -1,34 +1,4 @@
 /**
- * checks if a variable is of @type {boolean}
- * @param value
- * @returns {boolean}
- */
-var isBoolean = function (value) {
-    return typeof value == 'boolean';
-};
-
-/**
- * Trims whitespace at the beginning and/or end of a string
- * @param value - string to be trimmed
- * @returns {String} - returns an empty string if the value passed is not of type {String}
- */
-var trimString = function (value) {
-    if (angular.isString(value))
-        return value.replace(/^\s*/, '').replace(/\s*$/, '');
-    return "";
-};
-
-/**
- * This method checks if a variable is of type {string}
- * and if the string is not an empty string
- * @param value
- * @returns {*|Boolean|boolean}
- */
-var isValidString = function (value) {
-    return (angular.isString(value) && trimString(value) !== "");
-};
-
-/**
  * processUseOverride returns true if the override flag is set.
  * this is used to activate the override functionality.
  * @param override
@@ -45,24 +15,6 @@ var processUseOverride = function (override) {
  * */
 var processOverride = function (override) {
     return override !== false;
-};
-
-/**
- * This method is responsible for generating the prefix of all extended $log messages pushed to the console
- * @param {string=} className - $controller name
- * @returns {string} - formatted string
- */
-var getLogPrefix = function (/**{String=}*/className) {
-    var formatMessage = "";
-    var separator = " >> ";
-    var format = "MMM-dd-yyyy-h:mm:ssa";
-    var now = $filter('date')(new Date(), format);
-    if (!isValidString(className)) {
-        formatMessage = "" + now + separator;
-    } else {
-        formatMessage = "" + now + "::" + className + separator;
-    }
-    return formatMessage;
 };
 
 /**
@@ -101,19 +53,20 @@ var printOverrideLogs = function (_$log, useOverride, _override, className, enab
 };
 
 /**
- * original $log methods exposed after extended $log instance is set
- * @type {string[]}
+ * Converts an array to a object literal
+ * @param arr
+ * @returns {{getInstance: (exports.packets.noop|*|container.noop|noop|)}}
  */
-var logMethods = ['log', 'info', 'warn', 'debug', 'error'];
-
-/**
- * publicly allowed methods for the extended $log object. 
- * this give the developer the option of using special features
- * such as setting a className and overriding log messages. 
- * More Options to come.
- * @type {string[]}
- */
-var allowedMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
+var arrToObject = function(arr) {
+    var result = {};
+    if(angular.isArray(arr)) {
+        result = { getInstance:angular.noop };
+        angular.forEach(arr, function(value) {
+            result[value] = angular.noop;
+        });
+    }
+    return result;
+};
 
 /**
  * This generic method builds $log objects for different uses around the module 
@@ -126,16 +79,21 @@ var allowedMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
  * @returns {{}}
  */
 var createLogObj = function(oSrc, aMethods, /**{Function=}*/func, /**{*Array=}*/aParams) {
-    var resultSet = {};
-    angular.forEach(aMethods, function (value) {
+    var resultSet = {},
+        oMethods = arrToObject(aMethods);
+    angular.forEach(defaultLogMethods, function (value) {
+        var res;
         if (angular.isDefined(aParams)) {
             var params = [];
             angular.copy(aParams, params);
             params.unshift(oSrc[value]);
-            resultSet[value] = func.apply(null, params);
+            res = func.apply(null, params);
         } else {
-            resultSet[value] = oSrc[value];
+            res = oSrc[value];
         }
+//        console.log(angular.isUndefined(oMethods[value]), oMethods);
+        resultSet[value] = angular.isUndefined(oMethods[value]) ? angular.noop : res;
     });
+//    console.log(resultSet);
     return resultSet;
 };

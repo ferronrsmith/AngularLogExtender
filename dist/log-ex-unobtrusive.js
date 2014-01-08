@@ -1,5 +1,5 @@
 /**
- * Log Unobtrusive Extension v0.0.3-sha.7a58e8e
+ * Log Unobtrusive Extension v0.0.3-sha.f6846fb
  *
  * Used within AngularJS to enhance functionality within the AngularJS $log service.
  *
@@ -15,46 +15,83 @@
  * - Has global and feature level activation/disabling for $log
  * - Created and tested with AngularJS v.1.2.3
  */
-angular.module("log.extension.uo", []).config(['$provide',
+angular.module("log.extension.uo", []).provider('logEx', ['$provide',
     function($provide) {
+
+        // Creates an injector function that can be used for retrieving services as well as for dependency injection
+        var $injector = angular.injector(['ng']);
+
+        // Used the $injector defined to retrieve the $filterProvider
+        var $filter = $injector.get('$filter');
+
+        var enableGlobally = false;
+
+        // default log methods available
+        var defaultLogMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
+        /**
+         * publicly allowed methods for the extended $log object.
+         * this give the developer the option of using special features
+         * such as setting a className and overriding log messages.
+         * More Options to come.
+         * @type {string[]}
+         */
+        var allowedMethods = defaultLogMethods;
+
+        /**
+         * Trims whitespace at the beginning and/or end of a string
+         * @param value - string to be trimmed
+         * @returns {String} - returns an empty string if the value passed is not of type {String}
+         */
+        var trimString = function(value) {
+            if (angular.isString(value))
+                return value.replace(/^\s*/, '').replace(/\s*$/, '');
+            return "";
+        };
+        /**
+         * checks if a variable is of @type {boolean}
+         * @param value
+         * @returns {boolean}
+         */
+        var isBoolean = function(value) {
+            return typeof value == 'boolean';
+        };
+        /**
+         * This method checks if a variable is of type {string}
+         * and if the string is not an empty string
+         * @param value
+         * @returns {*|Boolean|boolean}
+         */
+        var isValidString = function(value) {
+            return (angular.isString(value) && trimString(value) !== "");
+        };
+
+        /**
+         * This method is responsible for generating the prefix of all extended $log messages pushed to the console
+         * @param {string=} className - $controller name
+         * @returns {string} - formatted string
+         */
+        var getLogPrefix = function( /**{String=}*/ className) {
+            var formatMessage = "";
+            var separator = " >> ";
+            var format = "MMM-dd-yyyy-h:mm:ssa";
+            var now = $filter('date')(new Date(), format);
+            if (!isValidString(className)) {
+                formatMessage = "" + now + separator;
+            } else {
+                formatMessage = "" + now + "::" + className + separator;
+            }
+            return formatMessage;
+        };
+
+
         // Register our $log decorator with AngularJS $provider
         //scroll down to the Configuration section to set the log settings
-        $provide.decorator('$log', ["$delegate", "$filter",
-            function($delegate, $filter) {
+        $provide.decorator('$log', ["$delegate",
+            function($delegate) {
                 /** 
                  * Encapsulates functionality to extends $log and expose additional functionality
                  **/
                 var logEnhancerObj = function() {
-                    /**
-                     * checks if a variable is of @type {boolean}
-                     * @param value
-                     * @returns {boolean}
-                     */
-                    var isBoolean = function(value) {
-                        return typeof value == 'boolean';
-                    };
-
-                    /**
-                     * Trims whitespace at the beginning and/or end of a string
-                     * @param value - string to be trimmed
-                     * @returns {String} - returns an empty string if the value passed is not of type {String}
-                     */
-                    var trimString = function(value) {
-                        if (angular.isString(value))
-                            return value.replace(/^\s*/, '').replace(/\s*$/, '');
-                        return "";
-                    };
-
-                    /**
-                     * This method checks if a variable is of type {string}
-                     * and if the string is not an empty string
-                     * @param value
-                     * @returns {*|Boolean|boolean}
-                     */
-                    var isValidString = function(value) {
-                        return (angular.isString(value) && trimString(value) !== "");
-                    };
-
                     /**
                      * processUseOverride returns true if the override flag is set.
                      * this is used to activate the override functionality.
@@ -72,24 +109,6 @@ angular.module("log.extension.uo", []).config(['$provide',
                      * */
                     var processOverride = function(override) {
                         return override !== false;
-                    };
-
-                    /**
-                     * This method is responsible for generating the prefix of all extended $log messages pushed to the console
-                     * @param {string=} className - $controller name
-                     * @returns {string} - formatted string
-                     */
-                    var getLogPrefix = function( /**{String=}*/ className) {
-                        var formatMessage = "";
-                        var separator = " >> ";
-                        var format = "MMM-dd-yyyy-h:mm:ssa";
-                        var now = $filter('date')(new Date(), format);
-                        if (!isValidString(className)) {
-                            formatMessage = "" + now + separator;
-                        } else {
-                            formatMessage = "" + now + "::" + className + separator;
-                        }
-                        return formatMessage;
                     };
 
                     /**
@@ -128,19 +147,22 @@ angular.module("log.extension.uo", []).config(['$provide',
                     };
 
                     /**
-                     * original $log methods exposed after extended $log instance is set
-                     * @type {string[]}
+                     * Converts an array to a object literal
+                     * @param arr
+                     * @returns {{getInstance: (exports.packets.noop|*|container.noop|noop|)}}
                      */
-                    var logMethods = ['log', 'info', 'warn', 'debug', 'error'];
-
-                    /**
-                     * publicly allowed methods for the extended $log object.
-                     * this give the developer the option of using special features
-                     * such as setting a className and overriding log messages.
-                     * More Options to come.
-                     * @type {string[]}
-                     */
-                    var allowedMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
+                    var arrToObject = function(arr) {
+                        var result = {};
+                        if (angular.isArray(arr)) {
+                            result = {
+                                getInstance: angular.noop
+                            };
+                            angular.forEach(arr, function(value) {
+                                result[value] = angular.noop;
+                            });
+                        }
+                        return result;
+                    };
 
                     /**
                      * This generic method builds $log objects for different uses around the module
@@ -153,17 +175,22 @@ angular.module("log.extension.uo", []).config(['$provide',
                      * @returns {{}}
                      */
                     var createLogObj = function(oSrc, aMethods, /**{Function=}*/ func, /**{*Array=}*/ aParams) {
-                        var resultSet = {};
-                        angular.forEach(aMethods, function(value) {
+                        var resultSet = {},
+                            oMethods = arrToObject(aMethods);
+                        angular.forEach(defaultLogMethods, function(value) {
+                            var res;
                             if (angular.isDefined(aParams)) {
                                 var params = [];
                                 angular.copy(aParams, params);
                                 params.unshift(oSrc[value]);
-                                resultSet[value] = func.apply(null, params);
+                                res = func.apply(null, params);
                             } else {
-                                resultSet[value] = oSrc[value];
+                                res = oSrc[value];
                             }
+                            //        console.log(angular.isUndefined(oMethods[value]), oMethods);
+                            resultSet[value] = angular.isUndefined(oMethods[value]) ? angular.noop : res;
                         });
+                        //    console.log(resultSet);
                         return resultSet;
                     };
                     /**
@@ -202,7 +229,7 @@ angular.module("log.extension.uo", []).config(['$provide',
                          * @type {*}
                          * @private
                          */
-                        var _$log = createLogObj($log, logMethods);
+                        var _$log = createLogObj($log, allowedMethods);
 
 
                         /**
@@ -223,7 +250,7 @@ angular.module("log.extension.uo", []).config(['$provide',
                             var useOverride = processUseOverride(override);
                             override = processOverride(override);
                             printOverrideLogs(_$log, useOverride, override, className, enabled);
-                            return createLogObj(_$log, logMethods, prepareLogFn, [className, override, useOverride]);
+                            return createLogObj(_$log, allowedMethods, prepareLogFn, [className, override, useOverride]);
                         };
 
 
@@ -235,7 +262,7 @@ angular.module("log.extension.uo", []).config(['$provide',
                          * @param $log
                          * @param function (with transformation rules)
                          **/
-                        angular.extend($log, createLogObj($log, logMethods, prepareLogFn, [null, false, false]));
+                        angular.extend($log, createLogObj($log, allowedMethods, prepareLogFn, [null, false, false]));
 
                         /**
                          * Extend the $log with the {@see getInstance} method
@@ -282,7 +309,7 @@ angular.module("log.extension.uo", []).config(['$provide',
 
                 // ensure false is being passed for production deployments
                 // set to true for local development
-                $delegate.enableLog(true);
+                $delegate.enableLog(enableGlobally);
 
                 if ($delegate.logEnabled()) {
                     $delegate.log("CONFIG: LOGGING ENABLED GLOBALLY");
@@ -290,5 +317,60 @@ angular.module("log.extension.uo", []).config(['$provide',
                 return logEnhancer.exposeSafeLog($delegate);
             }
         ]);
+
+
+        // Provider functions that will be exposed to allow overriding of default $logProvider functionality
+
+        /**
+         * Enables/disables global logging
+         * @param flag
+         */
+        var enableLogging = function(flag) {
+            enableGlobally = isBoolean(flag) ? flag : false;
+        };
+
+        var restrictLogMethods = function(arrMethods) {
+            if (angular.isArray(arrMethods)) {
+                // TODO: should do validation on this to ensure valid properties are passed in
+                allowedMethods = arrMethods;
+            }
+        };
+
+        var overrideLogPrefix = function(logPrefix) {
+            if (angular.isFunction(logPrefix)) {
+                // TODO : Validation of the function to ensure it's of the correct format etc
+                // TODO : Might want to allow memoization of the default functionality and allow easy toggling of custom vs default
+                getLogPrefix = logPrefix;
+            }
+        };
+        /**
+         * default $get method necessary for provider to work
+         * not sure what to do with this yet
+         **/
+        this.$get = function() {
+            return {
+                name: 'Log Unobtrusive Extension',
+                version: '0.0.3-sha.f6846fb',
+                enableLogging: enableLogging,
+                restrictLogMethods: restrictLogMethods,
+                overrideLogPrefix: overrideLogPrefix
+            };
+        };
+
+        /**
+         * used externally to enable/disable logging globally
+         * @param flag {boolean}
+         **/
+        this.enableLogging = enableLogging;
+
+        /**
+         * Modify the default log prefix
+         **/
+        this.overrideLogPrefix = overrideLogPrefix;
+
+        /**
+         * Configure which log functions can be exposed at runtime
+         */
+        this.restrictLogMethods = restrictLogMethods;
     }
 ]);
