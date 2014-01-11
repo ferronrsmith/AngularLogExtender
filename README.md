@@ -3,12 +3,15 @@ AngularLogExtender
 
 This is an extension of the Angular $log functionality. It uses the native $decorator to push the $log pass its capabilities and provide new functionality such as configuring the $log for different environments such as production and development.
 
-###Notes
-
-The prefered file to use is the log-ex-unobtrusive.js file. With this file you can just include the module to your AngularJs Application and it does all the work. Methods native to the log extender are not publicly available in your AngularJs Application so this extension can be used as a standalone plugin.
-
 To view the blog this module was extended from and inspired by, go to 
 http://solutionoptimist.com/2013/10/07/enhance-angularjs-logging-using-decorators/
+
+[![Build Status](https://travis-ci.org/ferronrsmith/AngularLogExtender.png?branch=master)](https://travis-ci.org/ferronrsmith/AngularLogExtender)
+[![Coverage Status](https://coveralls.io/repos/ferronrsmith/AngularLogExtender/badge.png)](https://coveralls.io/r/ferronrsmith/AngularLogExtender)
+
+###Notes
+
+The prefered file to use is the log-ex-unobtrusive.js file. You can include the module to your AngularJs Application and it does all the work immediately. Methods native to the log extender are not publicly available in your AngularJs Application so this extension can be used as a standalone plugin. Advanced configurations can be done to make the $log service fit your personal development style.
 
 Feel Free to make your own contributions to this module so we can make it better :)
 
@@ -17,44 +20,57 @@ Feel Free to make your own contributions to this module so we can make it better
 1. Set $log Instance Class Name
 2. Enable/Disable Logging Globally
 3. Enable/Disable Logging at a Component Level
+4. Customize the Log Prefix
+5. Enable/Disable Specific $log methods throughout the app
 
 ##How to Use 
 
 ######Step 1. Add Module Dependency
 ```javascript
-var app = angular.module('myAngularApp', ['log.extension.uo']);
+var app = angular.module('myAngularApp', ['log.ex.uo']);
 ```
-
 ######Step 2. Enable Debugging Globally to see logs
 
-Add the logExProvider dependency to your AngularJS app to configure logging. Pass true to the logExProvider.enableLogging(boolean) function as a parameter to enable logging. This is set to false by default to disable logging in a production environment. The Best practice is to keep this flag set to false in the master version of the code base, given that some version control system is being used. See eg. below.
+Add the logExProvider dependency to your AngularJS app to configure logging. Pass true to the `logExProvider.enableLogging(boolean)` function as a parameter to enable logging. This is set to false by default to disable logging in a production environment. The Best practice is to keep this flag set to false in the master version of the code base, given that some version control system is being used. See eg. below.
 
 ```javascript
-app.config([ 'logExProvider', function(logExProvider) {
+app.config(['logExProvider', function(logExProvider) {
     logExProvider.enableLogging(true);
 }]);
 ```
+######Step 3. Print Log from any component (Controller, Directive etc..)
 
-######Step 3. Restrict Logging to specific methods
+```javascript
+app.controller('CoreController', ['$scope','$log', function($scope, $log) {
+    $log.log("Simple Log Extender Example"); 
+}]);
+```
+######Step 4. Load the web page and look in the Developer Console
+Sample Output
+```
+Dec-08-2013-12:50:52PM >>  CONFIG: LOGGING ENABLED GLOBALLY
+Dec-08-2013-12:50:52PM >>  Simple Log Extender Example 
+```
+##Advanced Configurations
+
+######1. Restrict Logging to specific methods
 
 Add the logExProvider dependency to your AngularJS app to configure logging. Pass an array with the methods that should be enabled to the `restrictLogMethods` method. `$warn, $debug, $error` messages won't be displayed in the console
 
 ```javascript
-app.config([ 'logExProvider', function(logExProvider) {
+app.config(['logExProvider', function(logExProvider) {
     logExProvider.restrictLogMethods(['log', 'info']);
 }]);
 ```
-
-######Step 4. Override Log Prefix - Log Prefix Formatter
+######2. Override Log Prefix - Log Prefix Formatter
 
 Add the logExProvider dependency to your AngularJS app to configure logging. Pass a custom function that accepts a `className` param to the `overrideLogPrefix` method
 
 ```javascript
-app.controller('CoreController', ['$scope','$log', function($scope, $log) {
+app.config(['logExProvider', function(logExProvider) {
     logExProvider.overrideLogPrefix(function (className) {
         var $injector = angular.injector([ 'ng' ]);
         var $filter = $injector.get( '$filter' );
-        var formatMessage = "";
         var separator = " >> ";
         var format = "MMMM-dd-yyyy-h:mm:ssa";
         var now = $filter('date')(new Date(), format);
@@ -62,14 +78,6 @@ app.controller('CoreController', ['$scope','$log', function($scope, $log) {
     });
 }]);
 ```
-
-######Step 5. Load the web page and look in the Developer Console
-Sample Output
-```
-Dec-08-2013-12:50:52PM >>  CONFIG: LOGGING ENABLED GLOBALLY
-Dec-08-2013-12:50:52PM >>  Simple Log Extender Example 
-```
-
 ##Advanced Use Cases
 ###Use Case 1: Set Component Class Name
 This example can be used to know which component (controller, directive etc.) $log instances are being pushed from to the console. The new instance must be re-assigned to the $log object to take effect. This Advanced use case is always recommended to get more information from your application logs. 
@@ -144,6 +152,18 @@ app.controller('CoreController', ['$scope','$log', function($scope, $log) {
 Dec-08-2013-1:20:56PM >> [OVERRIDE] LOGGING ENABLED - $log enabled for this instance
 Dec-08-2013-1:20:56PM >>  Advanced Log Extender Example: Use Case 3: Eg 2
 ```
+
+###Use Case 4: Configure only specific methods to print to the console
+This scenario is helpful when you want to only allow specific types of log messages to be sent to the console in a 
+particular environment. For eg. Say we want to only allow error logs to be seen in production, then the following configuration will
+produce this result.
+#####Eg 1.
+```javascript
+app.config(['logExProvider', function(logExProvider) {
+    logExProvider.enableLogging(true);
+    logExProvider.restrictLogMethods(['error']);
+}]);
+```
 ####NB.
 These examples only show the use of $log.log(), however, the other $log methods were left in tact and can be used as well.
 
@@ -158,9 +178,5 @@ These are:
 
 1. More configurations are being considered such as disabling timestamp to offer more customizations for a developers needs
 2. remove the need to reassign $log instance
-3. Log function level overriding
 
 
-[![Build Status](https://travis-ci.org/ferronrsmith/AngularLogExtender.png?branch=master)](https://travis-ci.org/ferronrsmith/AngularLogExtender)
-
-[![Coverage Status](https://coveralls.io/repos/ferronrsmith/AngularLogExtender/badge.png)](https://coveralls.io/r/ferronrsmith/AngularLogExtender)

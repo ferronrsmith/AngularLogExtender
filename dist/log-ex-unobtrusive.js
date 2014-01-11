@@ -1,5 +1,5 @@
 /**
- * Log Unobtrusive Extension v0.0.3-sha.2d1589e
+ * Log Unobtrusive Extension v0.0.4-sha.d4c9720
  *
  * Used within AngularJS to enhance functionality within the AngularJS $log service.
  *
@@ -15,7 +15,7 @@
  * - Has global and feature level activation/disabling for $log
  * - Created and tested with AngularJS v.1.2.3
  */
-angular.module("log.extension.uo", []).provider('logEx', ['$provide',
+angular.module("log.ex.uo", []).provider('logEx', ['$provide',
     function($provide) {
 
         // Creates an injector function that can be used for retrieving services as well as for dependency injection
@@ -26,8 +26,17 @@ angular.module("log.extension.uo", []).provider('logEx', ['$provide',
 
         var enableGlobally = false;
 
+        // methods as object [constant]
+        var lm = {
+            log: 'log',
+            info: 'info',
+            warn: 'warn',
+            error: 'error',
+            debug: 'debug'
+        };
         // default log methods available
-        var defaultLogMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
+        var defaultLogMethods = [lm.log, lm.info, lm.warn, lm.debug, lm.error, 'getInstance'];
+
         /**
          * publicly allowed methods for the extended $log object.
          * this give the developer the option of using special features
@@ -350,7 +359,7 @@ angular.module("log.extension.uo", []).provider('logEx', ['$provide',
         this.$get = function() {
             return {
                 name: 'Log Unobtrusive Extension',
-                version: '0.0.3-sha.2d1589e',
+                version: '0.0.4-sha.d4c9720',
                 enableLogging: enableLogging,
                 restrictLogMethods: restrictLogMethods,
                 overrideLogPrefix: overrideLogPrefix
@@ -372,5 +381,6 @@ angular.module("log.extension.uo", []).provider('logEx', ['$provide',
          * Configure which log functions can be exposed at runtime
          */
         this.restrictLogMethods = restrictLogMethods;
+
     }
 ]);
