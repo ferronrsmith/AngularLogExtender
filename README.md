@@ -15,6 +15,15 @@ The prefered file to use is the log-ex-unobtrusive.js file. You can include the 
 
 Feel Free to make your own contributions to this module so we can make it better :)
 
+###Install with bower:
+
+Now offers bower support.
+`bower install angular-logex`
+
+Add a script to your index.html:
+```javascript
+<script src="/bower_components/angular-logex/dist/log-ex-unobtrusive.js"></script>
+```
 ###Configurations
 
 1. Set $log Instance Class Name
@@ -176,7 +185,6 @@ These are:
 ```
 ##Future Implementations
 
-1. More configurations are being considered such as disabling timestamp to offer more customizations for a developers needs
-2. remove the need to reassign $log instance
+1. remove the need to reassign $log instance
 
 
