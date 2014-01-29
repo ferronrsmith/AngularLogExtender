@@ -1,5 +1,5 @@
 /**
- * Log Unobtrusive Extension v0.0.6-sha.af8bd36
+ * Log Unobtrusive Extension v0.0.6-sha.99672a4
  *
  * Used within AngularJS to enhance functionality within the AngularJS $log service.
  *
@@ -24,10 +24,29 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
         // Used the $injector defined to retrieve the $filterProvider
         var $filter = $injector.get('$filter');
 
+        // used to enable logging globally
         var enableGlobally = false;
+
+        // current browser user agent
+        var userAgent = navigator.userAgent;
 
         // default log methods available
         var defaultLogMethods = ['log', 'info', 'warn', 'debug', 'error', 'getInstance'];
+
+        // list of browsers that support colorify
+        var colorifySupportedBrowsers = ['chrome', 'firefox'];
+
+        // flag to activate/deactivate default log method colors
+        var useDefaultColors = true;
+
+        // default colours for each log method
+        var defaultLogMethodColors = {
+            log: 'color: green;',
+            info: 'color: blue',
+            warn: 'color: #CC9933;',
+            debug: 'color: brown;',
+            error: 'color: red;'
+        };
 
         /**
          * publicly allowed methods for the extended $log object.
@@ -44,17 +63,26 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
          * @returns {String} - returns an empty string if the value passed is not of type {String}
          */
         var trimString = function(value) {
-            if (angular.isString(value))
+            if (itypeof(value) === 'string')
                 return value.replace(/^\s*/, '').replace(/\s*$/, '');
             return "";
         };
+
+        /**
+         * The itypeof operator returns a string indicating the type of the unevaluated operand.
+         * @param val {*}
+         **/
+        var itypeof = function(val) {
+            return Object.prototype.toString.call(val).replace(/(\[|object|\s|\])/g, "").toLowerCase();
+        };
+
         /**
          * checks if a variable is of @type {boolean}
          * @param value
          * @returns {boolean}
          */
         var isBoolean = function(value) {
-            return typeof value == 'boolean';
+            return itypeof(value) === 'boolean';
         };
         /**
          * This method checks if a variable is of type {string}
@@ -63,7 +91,118 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
          * @returns {*|Boolean|boolean}
          */
         var isValidString = function(value) {
-            return (angular.isString(value) && trimString(value) !== "");
+            return (itypeof(value) === 'string' && trimString(value) !== "");
+        };
+
+
+        /**
+         * checks if @param1 is a substring of @param2
+         * @param sub
+         * @param full
+         * @returns {boolean}
+         */
+        var isSubString = function(sub, full) {
+            if (itypeof(sub) === 'string' && itypeof(full) === 'string') {
+                if (full.toLowerCase().indexOf(sub.toLowerCase()) != -1) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+
+        /**
+         * this method checks if useTemplate is truthy and
+         * if the log arguments array is equal to 2
+         * @param useTemplate
+         * @param args
+         */
+        var validateTemplateInputs = function(useTemplate, args) {
+            return isBoolean(useTemplate) && useTemplate && args.length == 2;
+        };
+        /**
+         * supplant is a string templating engine that replaces patterns
+         * in a string with values from a template object
+         * @param template
+         * @param values
+         * @param {RegExp=} pattern
+         **/
+        var supplant = function(template, values, /*{RegExp=}*/ pattern) {
+            var criteria1 = itypeof(template) !== 'string' && itypeof(values) !== 'object';
+            var criteria2 = itypeof(template) !== 'string' || itypeof(values) !== 'object';
+            if (criteria1 || criteria2) {
+                return Array.prototype.slice.call(arguments);
+            }
+
+            pattern = itypeof(pattern) === 'regexp' ? pattern : /\{([^\{\}]*)\}/g;
+
+            return template.replace(pattern, function(a, b) {
+                var p = b.split('.'),
+                    r = values;
+
+                try {
+                    for (var s in p) {
+                        r = r[p[s]];
+                    }
+                } catch (e) {
+                    r = a;
+                }
+
+                return (typeof r === 'string' || typeof r === 'number') ? r : a;
+            });
+        };
+
+        /**
+         * checks if the browser is a part of the supported browser list
+         * @returns {boolean}
+         */
+        var isColorifySupported = function() {
+            for (var i = 0; i < colorifySupportedBrowsers.length; i++) {
+                if (isSubString(colorifySupportedBrowsers[i], userAgent)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // stores flag to know if current browser is colorify supported
+        var isColorifySupportedBrowser = isColorifySupported();
+
+
+        /**
+         * checks if the log arguments array is of length 1 and the element is a string
+         * @param args
+         * @returns {boolean}
+         */
+        var validateColorizeInputs = function(args) {
+            return (args.length == 1 &&
+                itypeof(args[0]) === 'string');
+        };
+
+        /**
+         * does minor validation to ensure css string is valid
+         * @param value
+         * @returns {boolean}
+         */
+        var validateColorCssString = function(value) {
+            return (itypeof(value) === 'string' && isSubString(':', value));
+        };
+
+
+        /**
+         * takes a string a returns an array as parameters
+         * if browser is supported
+         * expected outcome $log.log('%c Oh my heavens! ', 'background: #222; color: #bada55');
+         * @param message
+         * @param colorCSS
+         * @param prefix
+         * @returns {*[]}
+         */
+        var colorify = function(message, colorCSS, prefix) {
+            prefix = (itypeof(prefix) === 'string' ? prefix : '');
+            var canProcess = isColorifySupportedBrowser && validateColorCssString(colorCSS) && itypeof(message) === 'string';
+            var output = canProcess ? ('' + prefix + message) : message;
+            return canProcess ? (["%c" + output, colorCSS]) : [output];
         };
 
         /**
@@ -72,16 +211,10 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
          * @returns {string} - formatted string
          */
         var getLogPrefix = function( /**{String=}*/ className) {
-            var formatMessage = "";
-            var separator = " >> ";
-            var format = "MMM-dd-yyyy-h:mm:ssa";
-            var now = $filter('date')(new Date(), format);
-            if (!isValidString(className)) {
-                formatMessage = "" + now + separator;
-            } else {
-                formatMessage = "" + now + "::" + className + separator;
-            }
-            return formatMessage;
+            var separator = " >> ",
+                format = "MMM-dd-yyyy-h:mm:ssa",
+                now = $filter('date')(new Date(), format);
+            return "" + now + ((itypeof(className) !== 'string') ? "" : "::" + className) + separator;
         };
 
 
@@ -184,6 +317,9 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
                                 var params = [];
                                 angular.copy(aParams, params);
                                 params.unshift(oSrc[value]);
+                                if (isColorifySupportedBrowser && useDefaultColors) {
+                                    params[5] = validateColorCssString(params[5]) ? params[5] : defaultLogMethodColors[value];
+                                }
                                 res = func.apply(null, params);
                             } else {
                                 res = oSrc[value];
@@ -203,19 +339,31 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
 
                         /**
                          * Partial application to pre-capture a logger function
-                         * @param logFn     - $log instance
+                         * @param logFn - $log instance
                          * @param className - name of the $controller class
                          * @param override
                          * @param useOverride
+                         * @param colorCss
+                         * @param useTemplate
                          * @returns {Function}
                          */
-                        var prepareLogFn = function(logFn, className, override, useOverride) {
+                        var prepareLogFn = function(logFn, className, override, useOverride, useTemplate, colorCss) {
                             var enhancedLogFn = function() {
                                 var activate = (useOverride) ? activateLogs(enabled, override) : enabled;
                                 if (activate) {
                                     var args = Array.prototype.slice.call(arguments);
-                                    var formatMessage = getLogPrefix(className);
-                                    args.unshift(formatMessage);
+                                    var prefix = getLogPrefix(className);
+                                    if (validateTemplateInputs(useTemplate, args)) {
+                                        var data = (supplant.apply(null, args));
+                                        data = (itypeof(data) === 'string') ? [data] : data;
+                                        args = data;
+                                    }
+                                    if (itypeof(colorCss) === 'string' && validateColorizeInputs(args)) {
+                                        args = colorify(args[0], colorCss, prefix);
+                                    } else {
+                                        args.unshift(prefix);
+                                    }
+
                                     if (logFn) logFn.apply(null, args);
                                 }
                             };
@@ -232,18 +380,19 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
                          */
                         var _$log = createLogObj($log, allowedMethods);
 
-
                         /**
                          * Support to generate class-specific logger instance with/without className or override
-                         * @param {string=} className - Name of object in which $log.<function> calls is invoked.
+                         * @param {*} className - Name of object in which $log.<function> calls is invoked.
                          * @param {boolean=} override - activates/deactivates component level logging
+                         * @param {boolean=} useTemplate
+                         * @param {String=} colorCss
                          * @returns {*} $log instance
                          */
-                        var getInstance = function( /*{string=}**/ className, /**{boolean=}*/ override) {
+                        var getInstance = function( /*{*=}*/ className, /*{boolean=}*/ override, /*{boolean=}*/ useTemplate, /*{String=}*/ colorCss) {
                             if (isBoolean(className)) {
                                 override = className;
                                 className = null;
-                            } else if (angular.isString(className)) {
+                            } else if (itypeof(className) === 'string') {
                                 className = trimString(className);
                             } else {
                                 className = null;
@@ -251,7 +400,7 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
                             var useOverride = processUseOverride(override);
                             override = processOverride(override);
                             printOverrideLogs(_$log, useOverride, override, className, enabled);
-                            return createLogObj(_$log, allowedMethods, prepareLogFn, [className, override, useOverride]);
+                            return createLogObj(_$log, allowedMethods, prepareLogFn, [className, override, useOverride, useTemplate, colorCss]);
                         };
 
 
@@ -263,7 +412,7 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
                          * @param $log
                          * @param function (with transformation rules)
                          **/
-                        angular.extend($log, createLogObj($log, allowedMethods, prepareLogFn, [null, false, false]));
+                        angular.extend($log, createLogObj($log, allowedMethods, prepareLogFn, [null, false, false, false, null]));
 
                         /**
                          * Extend the $log with the {@see getInstance} method
@@ -344,6 +493,10 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
                 getLogPrefix = logPrefix;
             }
         };
+
+        var disableDefaultColors = function(flag) {
+            useDefaultColors = (isBoolean(flag) && flag) ? false : true;
+        };
         /**
          * default $get method necessary for provider to work
          * not sure what to do with this yet
@@ -351,10 +504,11 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
         this.$get = function() {
             return {
                 name: 'Log Unobtrusive Extension',
-                version: '0.0.6-sha.af8bd36',
+                version: '0.0.6-sha.99672a4',
                 enableLogging: enableLogging,
                 restrictLogMethods: restrictLogMethods,
-                overrideLogPrefix: overrideLogPrefix
+                overrideLogPrefix: overrideLogPrefix,
+                disableDefaultColors: disableDefaultColors
             };
         };
 
@@ -373,6 +527,11 @@ angular.module("log.ex.uo", []).provider('logEx', ['$provide',
          * Configure which log functions can be exposed at runtime
          */
         this.restrictLogMethods = restrictLogMethods;
+
+        /**
+         * Turns off default coloring of logs
+         */
+        this.disableDefaultColors = disableDefaultColors;
 
     }
 ]);

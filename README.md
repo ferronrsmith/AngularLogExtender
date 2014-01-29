@@ -11,14 +11,29 @@ http://solutionoptimist.com/2013/10/07/enhance-angularjs-logging-using-decorator
 
 ###Notes
 
-The prefered file to use is the log-ex-unobtrusive.js file. You can include the module to your AngularJs Application and it does all the work immediately. Methods native to the log extender are not publicly available in your AngularJs Application so this extension can be used as a standalone plugin. Advanced configurations can be done to make the $log service fit your personal development style.
+The prefered file to use is the log-ex-unobtrusive.js file. You can include the module to your AngularJs Application and it does all the work immediately. Methods native to the log extender are not publicly available in your AngularJs Application so this extension can be used as a standalone plugin. Advanced configurations can be done to make the $log service fit your personal development style. Log methods are now colour coded by default. 
+
+Supported browsers for Colorize are currently `Google Chrome` and `Mozilla Firefox`.
+
+####NB.
+The following examples only show the use of $log.log(), however, all $log methods were left in tact and can be used as well.
+
+These are:
+```
+   Method           Default Color
+1. $log.log()    -  Green
+2. $log.warn()   -  Gold
+3. $log.info()   -  Blue
+4. $log.error()  -  Red
+5. $log.debug()  -  Brown
+```
 
 Feel Free to make your own contributions to this module so we can make it better :)
 
 ###Install with bower:
 
 Now offers bower support.
-`bower install angular-logex`
+`bower install angular-logex --save`
 
 Add a script to your index.html:
 ```javascript
@@ -31,6 +46,9 @@ Add a script to your index.html:
 3. Enable/Disable Logging at a Component Level
 4. Customize the Log Prefix
 5. Enable/Disable Specific $log methods throughout the app
+6. Customize the color of your logs
+7. Use a template engine for your logs
+8. Disable/Enable default coloring of logs
 
 ##How to Use 
 
@@ -83,8 +101,16 @@ app.config(['logExProvider', function(logExProvider) {
         var separator = " >> ";
         var format = "MMMM-dd-yyyy-h:mm:ssa";
         var now = $filter('date')(new Date(), format);
-        return "" + now + (className === null ? "" : "::" + className) + separator;
+        return "" + now + (!angular.isString(className) ? "" : "::" + className) + separator;
     });
+}]);
+```
+######3. Disable/Enable default coloring of logs
+
+If the default color system is not to your liking, its possible to disable it. The following shows you how to do so.
+```javascript
+app.config(['logExProvider', function(logExProvider) {
+    logExProvider.disableDefaultColors(true);
 }]);
 ```
 ##Advanced Use Cases
@@ -173,18 +199,41 @@ app.config(['logExProvider', function(logExProvider) {
     logExProvider.restrictLogMethods(['error']);
 }]);
 ```
-####NB.
-These examples only show the use of $log.log(), however, the other $log methods were left in tact and can be used as well.
-
-These are:
+###Use Case 5: Use the built in template engine
+Templates can be used to replace string contents with matching propert names of an object. 
+Just pass a truthy boolean as the fourth parameter of the `getInstance()` method to activate the template engine.
+Logs must follow a specific format for this engine to recognize templates. These logs will also be coloured once a custom colour is set.
+The following example shows you how. 
+#####Eg.
+```javascript
+app.controller('CoreController', ['$scope','$log', function($scope, $log) {
+      $log = $log.getInstance('CoreController', true, true);
+      $log.log('Advanced Log Extender Example: Use Case {example}', {example: 6}); 
+}]);
 ```
-1. $log.warn()
-2. $log.info()
-3. $log.error()
-4. $log.debug()
+######Output:
 ```
-##Future Implementations
+Dec-08-2013-1:00:47PM >>  CONFIG: LOGGING ENABLED GLOBALLY
+Dec-08-2013-1:00:47PM::CoreController >>  Advanced Log Extender Example: Use Case 6
+```
 
-1. remove the need to reassign $log instance
+Currently, Only numbers and strings will be pushed into the template string.
 
+###Use Case 6: Color your log outputs
+Override the color of all log methods of a specific log instance is possible with AngularLogExtender. Just pass a css style as the third parameter of the `getInstance()` method. Currently, only logs with one parameter of type string will be parsed with the specified styles.
+The following example shows you how.
+#####Eg.
+```javascript
+app.controller('CoreController', ['$scope','$log', function($scope, $log) {
+      $log = $log.getInstance('CoreController', true, false,'color: #990099; background: #FFFFCC;');
+      $log.log("Advanced Log Extender Example: Use Case 5"); 
+}]);
+```
 
+Some good styles you can use are:
+
+```javascript
+'color: #990099; background: #FFFFCC;'
+'background: #222; color: #bada55;'
+```
+You can come up with your own as well :) !
