@@ -3,9 +3,11 @@
 /**
  * Used externally to enable/disable logging globally
  * @param {boolean} flag - flag that sets whether logging is enabled/disabled
+ * @param {boolean} verbose - flag that sets whether logging should be enabled quietly
  */
-var enableLogging = function (flag) {
-    enableGlobally = isBoolean(flag) ? flag : false;
+var enableLogging = function (flag, verbose) {
+	enableGlobally = isBoolean(flag) ? flag : false;
+	enabledQuietly = isBoolean(verbose) ? verbose : false;
 };
 
 /**
@@ -13,10 +15,10 @@ var enableLogging = function (flag) {
  * @param {*[]} arrMethods - list of methods that can be used
  */
 var restrictLogMethods = function (arrMethods) {
-    if (angular.isArray(arrMethods)) {
-        // TODO: should do validation on this to ensure valid properties are passed in
-        allowedMethods = arrMethods;
-    }
+	if (angular.isArray(arrMethods)) {
+		// TODO: should do validation on this to ensure valid properties are passed in
+		allowedMethods = arrMethods;
+	}
 };
 
 /**
@@ -24,11 +26,11 @@ var restrictLogMethods = function (arrMethods) {
  * @param {Function} logPrefix - function that defines the rule for a custom log prefix
  */
 var overrideLogPrefix = function (logPrefix) {
-    if (angular.isFunction(logPrefix)) {
-        // TODO : Validation of the function to ensure it's of the correct format etc
-        customLogPrefixFn = logPrefix;
-        logPrefixOverride = true;
-    }
+	if (angular.isFunction(logPrefix)) {
+		// TODO : Validation of the function to ensure it's of the correct format etc
+		customLogPrefixFn = logPrefix;
+		logPrefixOverride = true;
+	}
 };
 
 /**
@@ -36,7 +38,7 @@ var overrideLogPrefix = function (logPrefix) {
  * @param {boolean} flag - flag that configures disabling default log colors
  */
 var disableDefaultColors = function (flag) {
-    useDefaultColors = (!(isBoolean(flag) && flag));
+	useDefaultColors = (!(isBoolean(flag) && flag));
 };
 
 /**
@@ -45,12 +47,12 @@ var disableDefaultColors = function (flag) {
  * @param {String} colorCss - css string that defines what colour to be set for the specified log method
  */
 var setLogMethodColor = function (methodName, colorCss) {
-    if (itypeof(methodName) === 'string' &&
-        defaultLogMethodColors.hasOwnProperty(methodName) &&
-        validateColorCssString(colorCss)) {
+	if (itypeof(methodName) === 'string' &&
+		defaultLogMethodColors.hasOwnProperty(methodName) &&
+		validateColorCssString(colorCss)) {
 
-        defaultLogMethodColors[methodName] = colorCss;
-    }
+		defaultLogMethodColors[methodName] = colorCss;
+	}
 };
 
 /**
@@ -58,11 +60,11 @@ var setLogMethodColor = function (methodName, colorCss) {
  * @param {object} overrides - object that defines log method color overrides
  */
 var overrideLogMethodColors = function (overrides) {
-    if (itypeof(overrides) === 'object') {
-        angular.forEach(overrides, function (colorCss, method) {
-            setLogMethodColor(method, colorCss);
-        });
-    }
+	if (itypeof(overrides) === 'object') {
+		angular.forEach(overrides, function (colorCss, method) {
+			setLogMethodColor(method, colorCss);
+		});
+	}
 };
 
 /**
@@ -70,11 +72,11 @@ var overrideLogMethodColors = function (overrides) {
  * @param {boolean} flag - when passed true or flag is not set, it forces log-ex to use the default log prefix
  */
 var useDefaultLogPrefix = function (flag) {
-    if (angular.isUndefined(flag)) {
-        useDefaultPrefix = true;
-    } else if (isBoolean(flag)) {
-        useDefaultPrefix = flag;
-    }
+	if (angular.isUndefined(flag)) {
+		useDefaultPrefix = true;
+	} else if (isBoolean(flag)) {
+		useDefaultPrefix = flag;
+	}
 };
 
 /**
@@ -84,16 +86,16 @@ var useDefaultLogPrefix = function (flag) {
  * @param {Object} customConfig - config object to override/merge with default config
  */
 var configureLogFilters = function (customConfig) {
-    if (itypeof(customConfig) === 'object' &&
-        itypeof(customConfig.logFilters) === 'array' &&
-        customConfig.logFilters.length > 0) {
+	if (itypeof(customConfig) === 'object' &&
+		itypeof(customConfig.logFilters) === 'array' &&
+		customConfig.logFilters.length > 0) {
 
-        angular.forEach(customConfig.logFilters, function (value) {
-            if (itypeof(value) === 'string' && filterConfig.logFilters.indexOf(value) < 0) {
-                filterConfig.logFilters.push(value);
-            }
-        });
-        filterConfig.filterString = (itypeof(customConfig.filterString) !== 'string') ? defaultFilterString : customConfig.filterString;
+		angular.forEach(customConfig.logFilters, function (value) {
+			if (itypeof(value) === 'string' && filterConfig.logFilters.indexOf(value) < 0) {
+				filterConfig.logFilters.push(value);
+			}
+		});
+		filterConfig.filterString = (itypeof(customConfig.filterString) !== 'string') ? defaultFilterString : customConfig.filterString;
 
-    }
+	}
 };

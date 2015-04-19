@@ -11,6 +11,13 @@ var $filter = $injector.get('$filter');
 var enableGlobally = false;
 
 /**
+ * Used to enable quiet logger enabling.
+ * When this feature is enable the config message is not shown
+ * @type {boolean}
+ */
+var enabledQuietly = false;
+
+/**
  * Used to activate logPrefix overriding
  * @type {boolean}
  */
@@ -69,8 +76,8 @@ var defaultFilterString = '[FILTERED]';
  * @type {object}
  */
 var filterConfig = {
-    filterString: defaultFilterString,
-    logFilters: []
+	filterString: defaultFilterString,
+	logFilters: []
 };
 
 /**
@@ -78,11 +85,11 @@ var filterConfig = {
  * @type {object}
  */
 var defaultLogMethodColors = {
-    log: 'color: green;',
-    info: 'color: blue',
-    warn: 'color: #CC9933;',
-    debug: 'color: brown;',
-    error: 'color: red;'
+	log: 'color: green;',
+	info: 'color: blue',
+	warn: 'color: #CC9933;',
+	debug: 'color: brown;',
+	error: 'color: red;'
 };
 
 /**
